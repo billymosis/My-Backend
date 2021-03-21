@@ -1,0 +1,76 @@
+<html>
+
+<head>
+    <title>Item Details</title>
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td,
+        th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+    </style>
+
+
+</head>
+
+<body>
+    <h1>JINJA TEST</h1>
+    <form action="/files/" enctype="multipart/form-data" method="post">
+        <input name="files" type="file" multiple>
+        <input type="submit">
+    </form>
+    <form>
+        <input id="fileinput" name="files" type="file" multiple>
+        <input id="submit1" type="submit">
+    </form>
+    <table>
+        <tr>
+            <th>FILENAME</th>
+            <th>Directory</th>
+            <th>MD5</th>
+        </tr>
+        {% for FILENAME,DIRECTORY,MD5 in files %}
+        <tr>
+            <td><a href="{{'/' ~ DIRECTORY ~ '/' ~ MD5}}">{{ FILENAME }}</a></td>
+            <td>{{ DIRECTORY }}</td>
+            <td>{{ MD5 }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <script>
+        let input = document.getElementById('fileinput');
+        async function getres(file) {
+            let formdata = new FormData();
+            formdata.append("files", file, file.name);
+            const response = await fetch('/uploadfiles/', { // Your POST endpoint
+                method: 'POST',
+                body: formdata // This is your file object
+            })
+            const resp2 = await response.json()
+            return resp2
+        }
+
+        document.getElementById("submit1").addEventListener("click", async function (event) {
+            event.preventDefault()
+            try {
+                const x = await getres(input.files[0])
+            } catch (error) {
+                
+            }
+            console.log(x)
+        });
+    </script>
+</body>
+
+</html>
