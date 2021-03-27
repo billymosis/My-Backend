@@ -2,9 +2,8 @@ import shutil
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Callable
-import asyncio
 from fastapi import UploadFile
-import os
+
 
 def save_upload_file(upload_file: UploadFile, destination: Path) -> bool:
     try:

@@ -49,6 +49,7 @@
         {% endfor %}
     </table>
     <script>
+
         let input = document.getElementById('fileinput');
         async function getres(file) {
             let formdata = new FormData();
@@ -66,10 +67,10 @@
             try {
                 const x = await getres(input.files[0])
             } catch (error) {
-                
+                alert(error)
             }
-            console.log(x)
         });
+        
     </script>
 </body>
 
