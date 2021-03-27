@@ -1,4 +1,6 @@
-![Simple File Manager](https://i.imgur.com/8SKteyR.png "Simple File Manager")
+<p align="center">
+  <img src="https://i.imgur.com/8SKteyR.png" />
+</p>
 
 # My Backend
 
