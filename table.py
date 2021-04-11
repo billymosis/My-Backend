@@ -21,19 +21,19 @@ from sqlalchemy import text
 
 engine = create_engine("sqlite:///db/test.db", echo=True)
 
-with engine.connect() as conn:
-    conn.execute(
-        text(
-            """
-            INSERT INTO TEST1
-            (FILENAME, DIRECTORY, MD5, VERSION, MESSAGE, UPLOADER)
-            VALUES (:a, 'temp', :b, :c, :d, :e)
-            """
-        ),
-        [{"a": "ntva", "b": "mddx", "c": 0, "d": "first commit", "e": "billy"}],
-    )
+# with engine.connect() as conn:
+#     conn.execute(
+#         text(
+#             """
+#             INSERT INTO TEST1
+#             (FILENAME, DIRECTORY, MD5, VERSION, MESSAGE, UPLOADER)
+#             VALUES (:a, 'temp', :b, :c, :d, :e)
+#             """
+#         ),
+#         [{"a": "ntva", "b": "mddx", "c": 0, "d": "first commit", "e": "billy"}],
+#     )
 
-    print("done commiting")
+#     print("done commiting")
 
 
 with engine.connect() as conn:

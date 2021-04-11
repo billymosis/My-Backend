@@ -2,6 +2,10 @@
 
 <head>
     <title>Item Details</title>
+
+    <link href="https://unpkg.com/filepond/dist/filepond.css" rel="stylesheet">
+
+
     <style>
         table {
             font-family: arial, sans-serif;
@@ -19,6 +23,11 @@
         tr:nth-child(even) {
             background-color: #dddddd;
         }
+
+        .bar {
+            height: 18px;
+            background: green;
+        }
     </style>
 
 
@@ -26,52 +35,87 @@
 
 <body>
     <h1>JINJA TEST</h1>
-    <form action="/files/" enctype="multipart/form-data" method="post">
-        <input name="files" type="file" multiple>
-        <input type="submit">
-    </form>
-    <form>
-        <input id="fileinput" name="files" type="file" multiple>
-        <input id="submit1" type="submit">
-    </form>
-    <table>
+
+
+    <div style="width: 300px; height: auto;min-height: 100px; border: black;border-style: dashed; border-width: 1px;">
+        <input id='pondpond' type="file" class="filepond" name="filepond" multiple />
+
+        <!-- include FilePond library -->
+        <script src="https://unpkg.com/filepond/dist/filepond.min.js"></script>
+
+        <script>
+            async function delete_files(x){
+                let md5 = x.getAttribute("md5")
+                console.log(md5)
+                const response = await fetch('/serve/' + md5,{method: 'DELETE'})
+                const resp2 = await response.json()
+                console.log(resp2)
+                return resp2
+            }
+            const pond = FilePond.create(document.getElementById('pondpond'), {
+                allowDrop: true,
+                dropOnPage: true,
+                dropOnElement: false,
+                allowMultiple: true,
+                server: {
+                    process: (fieldName, file, metadata, load, error, progress, abort) => {
+
+                        // We ignore the metadata property and only send the file
+
+                        const formData = new FormData();
+                        formData.append('files', file, file.name);
+
+                        const request = new XMLHttpRequest();
+                        request.open('POST', '/uploadfiles/');
+
+                        request.upload.onprogress = (e) => {
+                            progress(e.lengthComputable, e.loaded, e.total);
+                        };
+
+                        request.onload = function () {
+                            if (request.status >= 200 && request.status < 300) {
+                                load(request.responseText);
+                            }
+                            else {
+                                error('oh no');
+                            }
+                        };
+
+                        request.send(formData);
+
+                    }
+                }
+            });
+
+        </script>
+
+    </div>
+
+    <table style="margin-top: 2em;">
         <tr>
-            <th>FILENAME</th>
+            <th>No</th>
+            <th>Filename</th>
+            <th>Version</th>
             <th>Directory</th>
+            <th>Message</th>
+            <th>Uploader</th>
             <th>MD5</th>
+            <th>ACTION</th>
         </tr>
-        {% for FILENAME,DIRECTORY,MD5 in files %}
+        {% for FILENAME, DIRECTORY, MD5, VERSION, MESSAGE, UPLOADER in files %}
         <tr>
+            <td>{{ loop.index }}</td>
             <td><a href="{{'/' ~ DIRECTORY ~ '/' ~ MD5}}">{{ FILENAME }}</a></td>
+            <td>{{ VERSION }}</td>
             <td>{{ DIRECTORY }}</td>
+            <td>{{ MESSAGE }}</td>
+            <td>{{ UPLOADER }}</td>
             <td>{{ MD5 }}</td>
+            <td><a id="del" onclick="delete_files(this)" md5="{{ MD5 }}">Del</a></td>
         </tr>
         {% endfor %}
     </table>
-    <script>
 
-        let input = document.getElementById('fileinput');
-        async function getres(file) {
-            let formdata = new FormData();
-            formdata.append("files", file, file.name);
-            const response = await fetch('/uploadfiles/', { // Your POST endpoint
-                method: 'POST',
-                body: formdata // This is your file object
-            })
-            const resp2 = await response.json()
-            return resp2
-        }
-
-        document.getElementById("submit1").addEventListener("click", async function (event) {
-            event.preventDefault()
-            try {
-                const x = await getres(input.files[0])
-            } catch (error) {
-                alert(error)
-            }
-        });
-        
-    </script>
 </body>
 
 </html>

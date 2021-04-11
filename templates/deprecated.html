@@ -1,0 +1,36 @@
+    <!-- <form>
+        <input id="fileinput" name="files" type="file" multiple>
+        <input id="submit1" type="submit">
+    </form> -->
+
+<!-- <script>
+
+        let input = document.getElementById('fileinput');
+
+        async function upload(file) {
+            let formdata = new FormData();
+            formdata.append("files", file, file.name);
+            const response = await fetch('/uploadfiles/', { // Your POST endpoint
+                method: 'POST',
+                body: formdata // This is your file object
+            })
+            const resp2 = await response.json()
+            return resp2
+        }
+
+        document.getElementById("submit1").addEventListener("click", function (event) {
+            event.preventDefault()
+            try {
+                let files = input.files
+                let x = []
+
+                Object.values(files).forEach(async file => {
+                    let y = await upload(file)
+                });
+
+            } catch (error) {
+                alert(error)
+            }
+        });
+
+    </script> -->

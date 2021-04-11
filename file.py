@@ -32,10 +32,6 @@ def md5sum(filename):
 
     return "{0}".format(md5.hexdigest())
 
-
-files = getListOfFiles("./.serve")
-print(files)
-
 # conn = sqlite3.connect('./db/test.db')
 
 # cursor = conn.execute(''' SELECT * FROM tbl1 ''')

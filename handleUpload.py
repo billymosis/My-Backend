@@ -1,3 +1,4 @@
+import os
 import shutil
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -23,6 +24,10 @@ def save_upload_file_tmp(upload_file: UploadFile) -> Path:
     finally:
         upload_file.file.close()
     return tmp_path
+
+
+def delete_file(target: Path):
+    os.remove(target)
 
 
 def handle_upload_file(
