@@ -131,3 +131,4 @@ dmypy.json
 # IGNORE FOLDER
 .serve
 .vscode
+frontend/node_modules

@@ -12,9 +12,26 @@ from fastapi.responses import FileResponse, HTMLResponse
 import handleUpload
 from sqlalchemy import create_engine
 import uvicorn
-
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from fastapi.encoders import jsonable_encoder
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+origins = [
+    "http://localhost",
+    "http://localhost:8000",
+    "http://localhost:3000"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 engine = create_engine("sqlite:///db/test.db", echo=True)
 
@@ -27,9 +44,7 @@ async def create_files(files: List[bytes] = File(...)):
 @app.post("/uploadfiles/")
 async def create_upload_files(files: List[UploadFile] = File(...)):
     for file in files:
-        if os.path.exists("temp") is false:
-            os.mkdir("temp")
-        y = Path("./temp/" + file.filename)
+        y = Path("./.temp/" + file.filename)
         if handleUpload.save_upload_file(file, y) is True:
             md5 = md5sum(y)
             z = Path("./.serve/" + md5)
@@ -55,8 +70,42 @@ async def create_upload_files(files: List[UploadFile] = File(...)):
             return {"filenames": [file.filename for file in files]}
 
 
+class file(BaseModel):
+    filename: str
+    directory: str
+    md5: str
+    version: int
+    message: str
+    uploader: str
+
+
+@app.get("/list/")
+async def list_files(response_model=list[file]):
+    print("mantab")
+    files = []
+    with engine.connect() as conn:
+        result = conn.execute(
+            text(
+                """
+                SELECT FILENAME,
+                DIRECTORY,
+                MD5,
+                VERSION,
+                MESSAGE,
+                UPLOADER
+                FROM TEST1
+                """
+            )
+        )
+        for FILENAME, DIRECTORY, MD5, VERSION, MESSAGE, UPLOADER in result:
+            files.append(file(filename=FILENAME, directory=DIRECTORY, md5=MD5, version=VERSION, message=MESSAGE, uploader=UPLOADER))
+    json_compatible_item_data = jsonable_encoder(files)
+    return JSONResponse(content=json_compatible_item_data)
+
+
 @app.get("/", response_class=HTMLResponse)
 async def main(request: Request):
+    print("mantab")
     templates = Jinja2Templates(directory="templates")
     files = []
     with engine.connect() as conn:
@@ -75,6 +124,7 @@ async def main(request: Request):
         )
         for FILENAME, DIRECTORY, MD5, VERSION, MESSAGE, UPLOADER in result:
             files.append((FILENAME, DIRECTORY, MD5, VERSION, MESSAGE, UPLOADER))
+    print(files)
     return templates.TemplateResponse("item.html", {"request": request, "files": files})
 
 
@@ -97,7 +147,12 @@ async def delete_files(file_md5: str):
 
 
 def start():
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    if os.path.exists("./.temp") is False:
+        os.mkdir("./.temp")
+    if os.path.exists("./.serve") is False:
+        os.mkdir("./.serve")
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+
 
 
 if __name__ == "__main__":
