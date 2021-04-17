@@ -14,7 +14,7 @@ interface Filex {
 }
 
 async function getFileList() {
-  const response = await axios.get<Filex[]>("http://127.0.0.1:8000/list/");
+  const response = await axios.get<Filex[]>("/list/");
   const { data } = response;
   return data;
 }
@@ -31,7 +31,7 @@ function App() {
 
   async function handleClick() {
     try {
-      const y = await fetch("http://localhost:8000/reset/", {
+      const y = await fetch("/reset/", {
         method: "GET",
       });
       const response = await y;
@@ -47,7 +47,7 @@ function App() {
     acceptedFiles.map(async (file) => {
       const myForm: FormData = new FormData();
       myForm.append("files", file, file.name);
-      const x = axios.post("http://localhost:8000/uploadfiles/", myForm, {
+      const x = axios.post("/uploadfiles/", myForm, {
         headers: {
           "Content-Type": "multipart/form-data",
           "Access-Control-Allow-Origin": "*",
@@ -65,7 +65,7 @@ function App() {
 
   return (
     <div>
-      <h1>{increment}</h1>
+      <h1>{increment} ntabas</h1>
       <MyDropzone onDrop={onDropHandler} />
       <button onClick={handleClick}>Reset</button>
       <MyTable files={token} />
