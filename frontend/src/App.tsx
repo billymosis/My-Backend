@@ -1,9 +1,10 @@
 import "./App.css";
 import axios from "axios";
-import { useState, useEffect, useMemo } from "react";
-import { useTable } from "react-table";
+import { useState, useEffect } from "react";
+import MyTable from "./components/table";
+import MyDropzone from "./components/dropzone";
 
-interface File {
+interface Filex {
   filename: string;
   directory: string;
   md5: string;
@@ -13,115 +14,61 @@ interface File {
 }
 
 async function getFileList() {
-  const response = await axios.get<File[]>("http://127.0.0.1:8000/list/");
+  const response = await axios.get<Filex[]>("http://127.0.0.1:8000/list/");
   const { data } = response;
   return data;
 }
 
 function App() {
-  const [token, setToken] = useState<File[]>([]);
+  const [token, setToken] = useState<Filex[]>([]);
+  const [increment, setIncrement] = useState(0);
   useEffect(() => {
     async function getToken() {
       setToken(await getFileList());
     }
     getToken();
-  }, []);
+  }, [increment]);
 
-  const data = useMemo<File[]>(() => token, [token]);
+  async function handleClick() {
+    try {
+      const y = await fetch("http://localhost:8000/reset/", {
+        method: "GET",
+      });
+      const response = await y;
+      if (response.status === 200) {
+        setIncrement(increment + 1);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
-  const columns = useMemo<any>(
-    () => [
-      {
-        Header: "File Name",
-        accessor: "filename", // accessor is the "key" in the data
-      },
-      {
-        Header: "Directory",
-        accessor: "directory",
-      },
-      {
-        Header: "MD5",
-        accessor: "md5",
-      },
-      {
-        Header: "Version",
-        accessor: "version",
-      },
-      {
-        Header: "Message",
-        accessor: "message",
-      },
-      {
-        Header: "Uploader",
-        accessor: "uploader",
-      },
-    ],
-    []
-  );
-
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    rows,
-    prepareRow,
-  } = useTable<File>({ columns, data });
+  function onDropHandler(acceptedFiles: File[]) {
+    acceptedFiles.map(async (file) => {
+      const myForm: FormData = new FormData();
+      myForm.append("files", file, file.name);
+      const x = axios.post("http://localhost:8000/uploadfiles/", myForm, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+      if ((await x).status === 200) {
+        console.log("success");
+        setIncrement(increment + 1);
+      } else {
+        console.log(x);
+        console.log("ERROR GAN!!!");
+      }
+    });
+  }
 
   return (
     <div>
-      <table {...getTableProps()}>
-        <thead>
-          {
-            // Loop over the header rows
-            headerGroups.map((headerGroup) => (
-              // Apply the header row props
-              <tr {...headerGroup.getHeaderGroupProps()}>
-                {
-                  // Loop over the headers in each row
-                  headerGroup.headers.map((column) => (
-                    // Apply the header cell props
-                    <th {...column.getHeaderProps()}>
-                      {
-                        // Render the header
-                        column.render("Header")
-                      }
-                    </th>
-                  ))
-                }
-              </tr>
-            ))
-          }
-        </thead>
-        {/* Apply the table body props */}
-        <tbody {...getTableBodyProps()}>
-          {
-            // Loop over the table rows
-            rows.map((row) => {
-              // Prepare the row for display
-              prepareRow(row);
-              return (
-                // Apply the row props
-                <tr {...row.getRowProps()}>
-                  {
-                    // Loop over the rows cells
-                    row.cells.map((cell) => {
-                      // Apply the cell props
-                      return (
-                        <td {...cell.getCellProps()}>
-                          {
-                            // Render the cell contents
-                            cell.render("Cell")
-                          }
-                        </td>
-                      );
-                    })
-                  }
-                </tr>
-              );
-            })
-          }
-        </tbody>
-      </table>
+      <h1>{increment}</h1>
+      <MyDropzone onDrop={onDropHandler} />
+      <button onClick={handleClick}>Reset</button>
+      <MyTable files={token} />
     </div>
   );
 }

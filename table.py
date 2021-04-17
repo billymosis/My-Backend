@@ -21,7 +21,7 @@ import shutil
 #             ''' % ('woke', 'thismd5', 0, 'first commit', 'billy'))
 # conn.close()
 
-#engine = create_engine("sqlite:///db/test.db", echo=True)
+# engine = create_engine("sqlite:///db/test.db", echo=True)
 
 # with engine.connect() as conn:
 #     conn.execute(
@@ -37,14 +37,31 @@ import shutil
 
 #     print("done commiting")
 
-def start():
+
+def delete():
     engine = create_engine("sqlite:///db/test.db", echo=True)
     with engine.connect() as conn:
-        conn.execute(text("DROP TABLE TEST1"))
+        conn.execute(text("DROP TABLE IF EXISTS TEST1"))
+
+
+def removeFolder():
+    if os.path.exists("./.temp") is True:
+        shutil.rmtree("./.temp")
+    if os.path.exists("./.serve") is True:
+        shutil.rmtree("./.serve")
+
+
+def create():
+    if os.path.exists("./.temp") is False:
+        os.mkdir("./.temp")
+    if os.path.exists("./.serve") is False:
+        os.mkdir("./.serve")
+    engine = create_engine("sqlite:///db/test.db", echo=True)
+    with engine.connect() as conn:
         conn.execute(
             text(
                 """
-                CREATE TABLE TEST1
+                CREATE TABLE IF NOT EXISTS TEST1
                 (ID INTEGER PRIMARY KEY NOT NULL, FILENAME TEXT NOT NULL,
                 DIRECTORY TEXT NOT NULL,MD5 TEXT NOT NULL UNIQUE,
                 VERSION INT NOT NULL,
@@ -53,10 +70,8 @@ def start():
             )
         )
 
-def removeFolder():
-    shutil.rmtree("./.temp")
-    shutil.rmtree("./.serve")
 
 if __name__ == "__main__":
-    start()
+    delete()
     removeFolder()
+    create()

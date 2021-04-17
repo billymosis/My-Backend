@@ -16,14 +16,12 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
+import table
+import shutil
 
 app = FastAPI()
 
-origins = [
-    "http://localhost",
-    "http://localhost:8000",
-    "http://localhost:3000"
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,12 +31,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 engine = create_engine("sqlite:///db/test.db", echo=True)
 
 
 @app.post("/files/")
 async def create_files(files: List[bytes] = File(...)):
     return {"file_sizes": [len(file) for file in files]}
+
+
+@app.get("/reset/")
+async def reset_db():
+    table.removeFolder()
+    table.delete()
+    table.create()
+    if os.path.exists("./.temp") is False:
+        os.mkdir("./.temp")
+    if os.path.exists("./.serve") is False:
+        os.mkdir("./.serve")
+    return {"message": "resseted"}
 
 
 @app.post("/uploadfiles/")
@@ -48,7 +59,7 @@ async def create_upload_files(files: List[UploadFile] = File(...)):
         if handleUpload.save_upload_file(file, y) is True:
             md5 = md5sum(y)
             z = Path("./.serve/" + md5)
-            os.rename(y, z)
+            shutil.move(y, z)
             with engine.connect() as conn:
                 conn.execute(
                     text(
@@ -81,7 +92,6 @@ class file(BaseModel):
 
 @app.get("/list/")
 async def list_files(response_model=list[file]):
-    print("mantab")
     files = []
     with engine.connect() as conn:
         result = conn.execute(
@@ -98,7 +108,16 @@ async def list_files(response_model=list[file]):
             )
         )
         for FILENAME, DIRECTORY, MD5, VERSION, MESSAGE, UPLOADER in result:
-            files.append(file(filename=FILENAME, directory=DIRECTORY, md5=MD5, version=VERSION, message=MESSAGE, uploader=UPLOADER))
+            files.append(
+                file(
+                    filename=FILENAME,
+                    directory=DIRECTORY,
+                    md5=MD5,
+                    version=VERSION,
+                    message=MESSAGE,
+                    uploader=UPLOADER,
+                )
+            )
     json_compatible_item_data = jsonable_encoder(files)
     return JSONResponse(content=json_compatible_item_data)
 
@@ -152,7 +171,6 @@ def start():
     if os.path.exists("./.serve") is False:
         os.mkdir("./.serve")
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
-
 
 
 if __name__ == "__main__":
