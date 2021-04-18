@@ -3,9 +3,9 @@ from typing import List
 from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
 from fastapi.datastructures import UploadFile
-from fastapi.params import File
+from fastapi.params import File, Form
 from pathlib import Path
-from sqlalchemy.sql.expression import false, text
+from sqlalchemy.sql.expression import text
 from starlette.requests import Request
 from file import md5sum
 from fastapi.responses import FileResponse, HTMLResponse
@@ -32,7 +32,7 @@ app.add_middleware(
 )
 
 
-engine = create_engine("sqlite:///db/test.db", echo=True)
+engine = create_engine("postgresql+psycopg2://billy:1111@localhost:5432/xdb")
 
 
 @app.post("/files/")
@@ -53,32 +53,27 @@ async def reset_db():
 
 
 @app.post("/uploadfiles/")
-async def create_upload_files(files: List[UploadFile] = File(...)):
-    for file in files:
-        y = Path("./.temp/" + file.filename)
-        if handleUpload.save_upload_file(file, y) is True:
-            md5 = md5sum(y)
-            z = Path("./.serve/" + md5)
-            shutil.move(y, z)
-            with engine.connect() as conn:
-                conn.execute(
-                    text(
-                        """
-                        INSERT INTO TEST1
-                        (FILENAME, DIRECTORY, MD5, VERSION, MESSAGE, UPLOADER)
-                        VALUES (:a, 'serve', :b, :c, :d, :e)
-                        """
-                    ),
-                    {
-                        "a": file.filename,
-                        "b": md5,
-                        "c": 0,
-                        "d": "first commit",
-                        "e": "billy",
-                    },
+async def create_upload_files(
+    file: UploadFile = File(...), filemd5: str = Form(...)
+):
+    y = Path("./.temp/" + file.filename)
+    z = Path("./.serve/" + filemd5)
+    #md5 = md5sum(y)
+    if handleUpload.save_upload_file(file, y) is True:
+        shutil.move(y, z)
+        with engine.connect() as conn:
+            conn.execute(
+                text(
+                    f"""
+                    INSERT INTO TEST1
+                    (FILENAME, DIRECTORY, MD5, VERSION, MESSAGE, UPLOADER)
+                    VALUES ('{file.filename}', 'serve',
+                    '{filemd5}', {0}, 'first commit', 'billy');
+                    """
                 )
-                print("done commiting")
-            return {"filenames": [file.filename for file in files]}
+            )
+            print("done commiting")
+        return {"filenames": file.filename}
 
 
 class file(BaseModel):
@@ -137,7 +132,7 @@ async def main(request: Request):
                 VERSION,
                 MESSAGE,
                 UPLOADER
-                FROM TEST1
+                FROM TEST1;
                 """
             )
         )

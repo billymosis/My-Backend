@@ -3,6 +3,7 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 import MyTable from "./components/table";
 import MyDropzone from "./components/dropzone";
+import { checksum } from "./function/checksum";
 
 interface Filex {
   filename: string;
@@ -21,7 +22,12 @@ async function getFileList() {
 
 function App() {
   const [token, setToken] = useState<Filex[]>([]);
-  const [increment, setIncrement] = useState(0);
+  const [increment, setIncrement] = useState(false);
+
+  function handleToggle() {
+    setIncrement(increment ? false : true)
+    console.log("toggling");
+  }
   useEffect(() => {
     async function getToken() {
       setToken(await getFileList());
@@ -36,36 +42,58 @@ function App() {
       });
       const response = await y;
       if (response.status === 200) {
-        setIncrement(increment + 1);
+        handleToggle();
       }
     } catch (error) {
       console.log(error);
     }
   }
 
-  function onDropHandler(acceptedFiles: File[]) {
-    acceptedFiles.map(async (file) => {
+  function delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+
+  async function onDropHandler(acceptedFiles: File[]) {
+    const asyncres = await Promise.all(acceptedFiles.map(async (file) => {
       const myForm: FormData = new FormData();
-      myForm.append("files", file, file.name);
-      const x = axios.post("/uploadfiles/", myForm, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
-      if ((await x).status === 200) {
-        console.log("success");
-        setIncrement(increment + 1);
-      } else {
-        console.log(x);
-        console.log("ERROR GAN!!!");
+      const filemd5: any = await checksum(file);
+      myForm.append("file", file, file.name);
+      myForm.append("filemd5", filemd5);
+      // const bl = file.slice(0, 10)
+      // const tx = await bl.text()
+      // console.log(tx)
+      // myForm.forEach((value, key) => {
+      //   console.log(key + " " + value)
+      // });
+      try {
+        const x = await axios.post("/uploadfiles/", myForm, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
+        if (x.status === 200) {
+          //await delay(10000);
+          return x
+        }
+      } catch (error) {
+        console.log(error);
+        console.log('error uploading: ' + file.name)
+        const arr = []
+        arr.push(file)
+        onDropHandler(arr)
+        return error
+      } finally {
+        handleToggle();
       }
-    });
+    }));
+    console.log(asyncres);
   }
 
   return (
     <div>
-      <h1>{increment} ntabas</h1>
+      <h1>{increment ? "true" : "false"} ntabas</h1>
       <MyDropzone onDrop={onDropHandler} />
       <button onClick={handleClick}>Reset</button>
       <MyTable files={token} />
